@@ -56,7 +56,7 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         primaryColor: Constants().primaryColor
       ),
-      home: _isLoggedIn ? HomePage() : LoginPage(),
+      home: _isLoggedIn ? const HomePage() : const LoginPage(),
     );
   }
 }

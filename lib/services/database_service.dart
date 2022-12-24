@@ -14,9 +14,19 @@ class DatabaseService {
     return usersCollection.doc(uid).set({
       "fullName": fullName,
       "email": email,
-      "groups": "",
+      "groups": [],
       "profilePic": "",
       "userId": uid,
     });
+  }
+
+  Future<Object?> getUsersCollectionData() async {
+    final dss = await usersCollection.doc(uid).get();
+
+    if (!dss.exists) {
+      throw Exception("Failed to fetch user data");
+    }
+
+    return dss.data();
   }
 }

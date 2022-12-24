@@ -1,3 +1,4 @@
+import 'package:chatapp/helper/helper_functions.dart';
 import 'package:chatapp/pages/auth/login_page.dart';
 import 'package:chatapp/pages/home_page.dart';
 import 'package:chatapp/services/auth_service.dart';
@@ -119,16 +120,16 @@ class _RegisterPageState extends State<RegisterPage> {
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20))),
                               onPressed: registerUser,
-                              child: const Text("Sign In",
+                              child: const Text("Sign Up",
                                   style: TextStyle(fontSize: 16)),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text.rich(TextSpan(
-                              text: "Don't have an account? ",
+                              text: "Already have an account? ",
                               children: <TextSpan>[
                                 TextSpan(
-                                    text: "Register here",
+                                    text: "Click here",
                                     style: const TextStyle(
                                         color: Colors.blue,
                                         decoration: TextDecoration.underline),
@@ -144,24 +145,24 @@ class _RegisterPageState extends State<RegisterPage> {
               ));
   }
 
-  registerUser() async {
+  void registerUser() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
+
       await authService
           .registerUserWithEmail(fullName, email, password)
           .then((value) {
         if (value == true) {
           nextScreen(context, const HomePage());
-          setState(() {
-            _isLoading = false;
-          });
-        } else {
-          setState(() {
-            _isLoading = false;
-          });
         }
+      }).onError((Exception error, stackTrace) {
+        showSnackBar(context, error.toString(), Colors.red);
+      });
+
+      setState(() {
+        _isLoading = false;
       });
     }
   }
