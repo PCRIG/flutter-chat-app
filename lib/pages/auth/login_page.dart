@@ -1,4 +1,5 @@
 import 'package:chatapp/pages/auth/register_page.dart';
+import 'package:chatapp/pages/home_page.dart';
 import 'package:chatapp/services/auth_service.dart';
 import 'package:chatapp/widgets/widgets.dart';
 import 'package:flutter/gestures.dart';
@@ -129,7 +130,15 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = true;
       });
       await authService.logInUserWithEmail(email, password).then((value) {
-        
+        if (value == true) {
+          nextScreen(context, const HomePage());
+        }
+      }).onError((Exception error, stackTrace) {
+        showSnackBar(context, error.toString(), Colors.red);
+      });
+
+      setState(() {
+        _isLoading = false;
       });
     }
   }

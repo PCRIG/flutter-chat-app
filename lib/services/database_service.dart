@@ -20,13 +20,8 @@ class DatabaseService {
     });
   }
 
-  Future<Object?> getUsersCollectionData() async {
-    final dss = await usersCollection.doc(uid).get();
-
-    if (!dss.exists) {
-      throw Exception("Failed to fetch user data");
-    }
-
-    return dss.data();
+  Future<QuerySnapshot> getUsersCollectionData(String email) async {
+    QuerySnapshot dss = await usersCollection.where("email", isEqualTo: email).get();
+    return dss;
   }
 }

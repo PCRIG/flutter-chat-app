@@ -1,3 +1,6 @@
+import 'package:chatapp/helper/helper_functions.dart';
+import 'package:chatapp/pages/auth/login_page.dart';
+import 'package:chatapp/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -10,6 +13,14 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Text("Home page"),);
+    return Scaffold(
+        body: Center(
+      child: ElevatedButton(
+          onPressed: () {
+            HelperFunctions.setUserLoggedInDetails(false, "", "");
+            nextScreen(context, const LoginPage());
+          },
+          child: const Text("Logout")),
+    ));
   }
 }
