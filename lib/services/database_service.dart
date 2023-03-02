@@ -20,8 +20,13 @@ class DatabaseService {
     });
   }
 
-  Future<QuerySnapshot> getUsersCollectionData(String email) async {
+  Future<QuerySnapshot> getUsersCollectionDataByEmail(String email) async {
     QuerySnapshot dss = await usersCollection.where("email", isEqualTo: email).get();
+    return dss;
+  }
+
+  Future<Stream> getUsersCollectionData() async {
+    Stream dss = usersCollection.doc(uid).snapshots();
     return dss;
   }
 }

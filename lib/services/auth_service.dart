@@ -30,7 +30,7 @@ class AuthService {
       User user = (await firebaseAuth.signInWithEmailAndPassword(
           email: email, password: password)).user!;
 
-      QuerySnapshot userData = await DatabaseService(user.uid).getUsersCollectionData(user.email!);
+      QuerySnapshot userData = await DatabaseService(user.uid).getUsersCollectionDataByEmail(user.email!);
 
       HelperFunctions.setUserLoggedInDetails(true, userData.docs[0]["fullName"], email);
 
