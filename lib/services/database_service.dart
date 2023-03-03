@@ -21,12 +21,35 @@ class DatabaseService {
   }
 
   Future<QuerySnapshot> getUsersCollectionDataByEmail(String email) async {
-    QuerySnapshot dss = await usersCollection.where("email", isEqualTo: email).get();
+    QuerySnapshot dss =
+        await usersCollection.where("email", isEqualTo: email).get();
     return dss;
   }
 
   Future<Stream> getUsersCollectionData() async {
     Stream dss = usersCollection.doc(uid).snapshots();
     return dss;
+  }
+
+  Future createGroup(String userName, String uid, String groupName) async {
+    DocumentReference groupDocRef = await groupCollection.add({
+      "groupName": groupName,
+      "groupIcon": "",
+      "admin": "${uid}_$userName",
+      "members": [],
+      "groupId": "",
+      "recentMessage": "",
+      "recentMessageSender": ""
+    });
+
+    await groupDocRef.update({
+      "members": FieldValue.arrayUnion(["${uid}_$userName"]),
+      "groupId": groupDocRef.id
+    });
+
+    DocumentReference userDocRef = usersCollection.doc(uid);
+    await userDocRef.update({
+      "groups": FieldValue.arrayUnion(["${groupDocRef.id}_$groupName"])
+    });
   }
 }
