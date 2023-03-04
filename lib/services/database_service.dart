@@ -52,4 +52,24 @@ class DatabaseService {
       "groups": FieldValue.arrayUnion(["${groupDocRef.id}_$groupName"])
     });
   }
+
+  Future getChats(String groupId) async {
+    return groupCollection
+        .doc(groupId)
+        .collection('messages')
+        .orderBy('time')
+        .snapshots();
+  }
+
+  Future getGroupAdmin(String groupId) async {
+    return (await groupCollection.doc(groupId).get())['admin'];
+  }
+
+  sendMessage(String groupId, Map<String, dynamic> messageMap) async {
+    groupCollection.doc(groupId).collection('messages').add(messageMap);
+    groupCollection.doc(groupId).update({
+      "recentMessage": messageMap['message'],
+      "recentMessageSender": messageMap['sender']
+    });
+  }
 }

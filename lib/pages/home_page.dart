@@ -170,7 +170,7 @@ class _HomePageState extends State<HomePage> {
                       Navigator.of(context).pop();
                     },
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor),
+                        onPrimary: Theme.of(context).primaryColor),
                     child: const Text("CANCLE")),
                 ElevatedButton(
                     onPressed: () async {
@@ -192,7 +192,7 @@ class _HomePageState extends State<HomePage> {
                               });
                     },
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor),
+                        onPrimary: Theme.of(context).primaryColor),
                     child: const Text("CREATE")),
               ],
             );
