@@ -65,11 +65,35 @@ class DatabaseService {
     return (await groupCollection.doc(groupId).get())['admin'];
   }
 
-  sendMessage(String groupId, Map<String, dynamic> messageMap) async {
+  Future<void> sendMessage(
+      String groupId, Map<String, dynamic> messageMap) async {
     groupCollection.doc(groupId).collection('messages').add(messageMap);
     groupCollection.doc(groupId).update({
       "recentMessage": messageMap['message'],
       "recentMessageSender": messageMap['sender']
+    });
+  }
+
+  Future<QuerySnapshot> searchGroup(String groupName) async {
+    return await groupCollection.where('groupName', isEqualTo: groupName).get();
+  }
+
+  Future<bool> isUserJoined(
+      String groupId, String groupName) async {
+    DocumentSnapshot userDoc = await usersCollection.doc(uid).get();
+    List<dynamic> groups = userDoc['groups'];
+    if (groups.contains("${groupId}_$groupName")) {
+      return true;
+    }
+    return false;
+  }
+
+  Future joinGroup(String groupId, String groupName, String userName) async {
+    await usersCollection.doc(uid).update({
+      'groups': FieldValue.arrayUnion(["${groupId}_$groupName"])
+    });
+    await groupCollection.doc(groupId).update({
+      'members': FieldValue.arrayUnion(["${uid}_$userName"])
     });
   }
 }

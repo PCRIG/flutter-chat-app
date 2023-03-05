@@ -6,7 +6,6 @@ import 'package:chatapp/pages/search_page.dart';
 import 'package:chatapp/services/database_service.dart';
 import 'package:chatapp/widgets/widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -48,10 +47,13 @@ class _HomePageState extends State<HomePage> {
             email = value!;
           })
         });
-    setState(() async {
-      userStream = await DatabaseService(FirebaseAuth.instance.currentUser!.uid)
-          .getUsersCollectionData();
-    });
+    await DatabaseService(FirebaseAuth.instance.currentUser!.uid)
+        .getUsersCollectionData()
+        .then((value) => {
+              setState(() {
+                userStream = value;
+              })
+            });
   }
 
   @override
