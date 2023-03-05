@@ -142,9 +142,12 @@ class _SearchPageState extends State<SearchPage> {
         isUserJoined = true;
       });
       showSnackBar(context, "Joined the group sucessfully", Colors.green);
-      Future.delayed(const Duration(seconds: 2));
-      nextScreen(context,
-          ChatPage(groupId: groupId, groupName: groupName, userName: userName));
+      Future.delayed(const Duration(seconds: 2)).then((value) => {
+            nextScreen(
+                context,
+                ChatPage(
+                    groupId: groupId, groupName: groupName, userName: userName))
+          });
     });
   }
 

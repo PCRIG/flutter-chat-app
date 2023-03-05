@@ -4,7 +4,6 @@ import 'package:chatapp/services/database_service.dart';
 import 'package:chatapp/widgets/widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 class ChatPage extends StatefulWidget {
@@ -26,6 +25,7 @@ class _ChatPageState extends State<ChatPage> {
   String admin = '';
   Stream<QuerySnapshot>? chatStream;
   TextEditingController messageController = TextEditingController();
+  ScrollController scrollController = ScrollController();
 
   @override
   void initState() {
@@ -118,30 +118,45 @@ class _ChatPageState extends State<ChatPage> {
     return StreamBuilder(
         stream: chatStream,
         builder: ((context, AsyncSnapshot snapshot) {
-          return snapshot.hasData
-              ? ListView.builder(
-                  itemCount: snapshot.data.docs.length,
-                  itemBuilder: (context, index) {
-                    return MessageTile(
-                      message: snapshot.data.docs[index]['message'],
-                      sender: snapshot.data.docs[index]['sender'],
-                      sentByMe: widget.userName ==
-                          snapshot.data.docs[index]['sender'],
-                    );
-                  },
-                )
-              : Container();
+          if (snapshot.hasData) {
+            WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+              if (scrollController.hasClients) {
+                scrollController.animateTo(
+                    scrollController.position.maxScrollExtent,
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeInOut);
+              }
+            });
+            return Container(
+              margin: const EdgeInsets.only(bottom: 70),
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: snapshot.data.docs.length,
+                itemBuilder: (context, index) {
+                  return MessageTile(
+                    message: snapshot.data.docs[index]['message'],
+                    sender: snapshot.data.docs[index]['sender'],
+                    sentByMe:
+                        widget.userName == snapshot.data.docs[index]['sender'],
+                  );
+                },
+              ),
+            );
+          } else {
+            return Container();
+          }
         }));
   }
 
   sendMessage() {
-    if(messageController.text.isNotEmpty){
+    if (messageController.text.isNotEmpty) {
       Map<String, dynamic> chatMessageMap = {
         'message': messageController.text,
         'sender': widget.userName,
         'time': DateTime.now().millisecondsSinceEpoch
       };
-      DatabaseService(FirebaseAuth.instance.currentUser!.uid).sendMessage(widget.groupId, chatMessageMap);
+      DatabaseService(FirebaseAuth.instance.currentUser!.uid)
+          .sendMessage(widget.groupId, chatMessageMap);
       messageController.clear();
     }
   }
