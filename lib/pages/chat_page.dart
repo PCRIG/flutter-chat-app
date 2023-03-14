@@ -83,14 +83,18 @@ class _ChatPageState extends State<ChatPage> {
               color: Colors.grey[600],
               child: Row(children: [
                 Expanded(
-                    child: TextFormField(
-                  controller: messageController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                      hintText: "Type a message...",
-                      hintStyle: TextStyle(color: Colors.white70),
-                      border: InputBorder.none),
-                )),
+                  child: TextFormField(
+                    onFieldSubmitted: (value) {
+                      sendMessage();
+                    },
+                    controller: messageController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                        hintText: "Type a message...",
+                        hintStyle: TextStyle(color: Colors.white70),
+                        border: InputBorder.none),
+                  ),
+                ),
                 const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () {

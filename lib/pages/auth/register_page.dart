@@ -1,4 +1,3 @@
-import 'package:chatapp/helper/helper_functions.dart';
 import 'package:chatapp/pages/auth/login_page.dart';
 import 'package:chatapp/pages/home_page.dart';
 import 'package:chatapp/services/auth_service.dart';
@@ -94,6 +93,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
+                            onFieldSubmitted: (value) {
+                              registerUser();
+                            },
                             obscureText: true,
                             decoration: textInputDecoration.copyWith(
                                 labelText: "Password",

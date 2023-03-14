@@ -73,6 +73,9 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
+                            onFieldSubmitted: (value) {
+                              signInUser();
+                            },
                             obscureText: true,
                             decoration: textInputDecoration.copyWith(
                                 labelText: "Password",
