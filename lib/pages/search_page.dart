@@ -3,8 +3,10 @@ import 'package:chatapp/pages/chat_page.dart';
 import 'package:chatapp/services/database_service.dart';
 import 'package:chatapp/widgets/widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:contacts_service/contacts_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -13,10 +15,13 @@ class SearchPage extends StatefulWidget {
   State<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
+class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   TextEditingController searchController = TextEditingController();
+  late TabController tabController;
+
   bool _isLoading = false;
   QuerySnapshot? searchGroupList;
+  List<Contact> searchContactList = [];
   String userName = '';
   String userId = '';
   bool isUserJoined = false;
@@ -24,6 +29,7 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
+    tabController = TabController(length: 2, vsync: this);
     getUserNameAndId();
   }
 
@@ -43,38 +49,85 @@ class _SearchPageState extends State<SearchPage> {
         title: const Text('Search Group'),
         centerTitle: true,
         backgroundColor: Theme.of(context).primaryColor,
+        bottom: TabBar(
+          overlayColor: MaterialStateProperty.all(Colors.white12),
+          controller: tabController,
+          tabs: <Widget>[
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const <Widget>[
+                  Icon(Icons.group),
+                  SizedBox(
+                    width: 8,
+                  ),
+                  Text("Group")
+                ],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const <Widget>[
+                  Icon(Icons.contact_phone),
+                  SizedBox(
+                    width: 8,
+                  ),
+                  Text("Contacts")
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-      body: Column(children: [
+      body: TabBarView(
+        controller: tabController,
+        children: [
+          searchWidget(isGroup: true),
+          searchWidget(isGroup: false),
+        ],
+      ),
+    );
+  }
+
+  Widget searchWidget({required bool isGroup}) {
+    return Column(
+      children: [
         Container(
-          margin: const EdgeInsets.all(12),
+          margin: const EdgeInsets.all(14),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-              border:
-                  Border.all(width: 1, color: Theme.of(context).primaryColor),
-              borderRadius: const BorderRadius.all(Radius.circular(20))),
+            border: Border.all(width: 1, color: Theme.of(context).primaryColor),
+            borderRadius: const BorderRadius.all(
+              Radius.circular(20),
+            ),
+          ),
           child: Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: searchController,
                   decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Type here...',
-                      hintStyle: TextStyle(color: Colors.black)),
+                    border: InputBorder.none,
+                    hintText: 'Type here...',
+                    hintStyle: TextStyle(color: Colors.black),
+                  ),
                 ),
               ),
               GestureDetector(
                 onTap: () {
-                  initiateSearch();
+                  initiateSearch(isGroup: isGroup);
                 },
                 child: Container(
                   height: 40,
                   width: 40,
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(15))),
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(15),
+                    ),
+                  ),
                   child: const Icon(Icons.search, color: Colors.white),
                 ),
               )
@@ -86,25 +139,39 @@ class _SearchPageState extends State<SearchPage> {
                 child: CircularProgressIndicator(
                     color: Theme.of(context).primaryColor),
               )
-            : groupList()
-      ]),
+            : isGroup
+                ? groupList()
+                : contactList(),
+      ],
     );
   }
 
-  initiateSearch() async {
+  initiateSearch({required isGroup}) async {
     if (searchController.text.isNotEmpty) {
       setState(() {
         _isLoading = true;
       });
 
-      await DatabaseService(FirebaseAuth.instance.currentUser!.uid)
-          .searchGroup(searchController.text)
-          .then((value) {
-        setState(() {
-          searchGroupList = value;
-          _isLoading = false;
+      if (isGroup) {
+        await DatabaseService(FirebaseAuth.instance.currentUser!.uid)
+            .searchGroup(searchController.text)
+            .then((value) {
+          setState(() {
+            searchGroupList = value;
+            _isLoading = false;
+          });
         });
-      });
+        return;
+      }
+
+      if (await Permission.contacts.request().isGranted) {
+        await ContactsService.getContacts(withThumbnails: false).then((value) {
+          setState(() {
+            searchContactList = value;
+            _isLoading = false;
+          });
+        });
+      }
     }
   }
 
@@ -121,6 +188,21 @@ class _SearchPageState extends State<SearchPage> {
                   userName);
             },
           )
+        : Container();
+  }
+
+  contactList() {
+    return searchContactList.isNotEmpty
+        ? ListView.builder(
+            shrinkWrap: true,
+            itemCount: searchContactList.length,
+            itemBuilder: ((context, index) {
+              return groupTile(
+                  "groupId",
+                  searchContactList[index].displayName ?? '',
+                  "admin",
+                  userName);
+            }))
         : Container();
   }
 
