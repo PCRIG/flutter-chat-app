@@ -16,7 +16,8 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
-  TextEditingController searchController = TextEditingController();
+  TextEditingController searchGroupController = TextEditingController();
+  TextEditingController searchContactController = TextEditingController();
   late TabController tabController;
 
   bool _isLoading = false;
@@ -51,6 +52,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         backgroundColor: Theme.of(context).primaryColor,
         bottom: TabBar(
           overlayColor: MaterialStateProperty.all(Colors.white12),
+          indicatorColor: Colors.white,
           controller: tabController,
           tabs: <Widget>[
             Tab(
@@ -106,7 +108,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             children: [
               Expanded(
                 child: TextField(
-                  controller: searchController,
+                  controller:
+                      isGroup ? searchGroupController : searchContactController,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     hintText: 'Type here...',
@@ -116,7 +119,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               ),
               GestureDetector(
                 onTap: () {
-                  initiateSearch(isGroup: isGroup);
+                  isGroup ? initiateGroupSearch() : initiateContactSearch();
                 },
                 child: Container(
                   height: 40,
@@ -146,32 +149,38 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     );
   }
 
-  initiateSearch({required isGroup}) async {
-    if (searchController.text.isNotEmpty) {
+  initiateGroupSearch() async {
+    if (searchGroupController.text.isNotEmpty) {
       setState(() {
         _isLoading = true;
       });
 
-      if (isGroup) {
-        await DatabaseService(FirebaseAuth.instance.currentUser!.uid)
-            .searchGroup(searchController.text)
-            .then((value) {
-          setState(() {
-            searchGroupList = value;
-            _isLoading = false;
-          });
+      await DatabaseService(FirebaseAuth.instance.currentUser!.uid)
+          .searchGroup(searchGroupController.text)
+          .then((value) {
+        setState(() {
+          searchGroupList = value;
+          _isLoading = false;
         });
-        return;
-      }
+      });
+      return;
+    }
+  }
 
-      if (await Permission.contacts.request().isGranted) {
-        await ContactsService.getContacts(withThumbnails: false).then((value) {
-          setState(() {
-            searchContactList = value;
-            _isLoading = false;
-          });
+  initiateContactSearch() async {
+    if (await Permission.contacts.request().isGranted) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      await ContactsService.getContacts(
+              withThumbnails: false, query: searchContactController.text)
+          .then((value) {
+        setState(() {
+          searchContactList = value;
+          _isLoading = false;
         });
-      }
+      });
     }
   }
 
@@ -197,11 +206,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             shrinkWrap: true,
             itemCount: searchContactList.length,
             itemBuilder: ((context, index) {
-              return groupTile(
-                  "groupId",
-                  searchContactList[index].displayName ?? '',
-                  "admin",
-                  userName);
+              return contactTile(searchContactList[index].displayName ?? "",
+                  searchContactList[index].phones?[0].value ?? "", userName);
             }))
         : Container();
   }
@@ -233,6 +239,25 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     });
   }
 
+  Widget contactTile(
+      String contactName, String contactNumber, String userName) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: Theme.of(context).primaryColor,
+        child: Text(
+          contactName.substring(0, 1).toUpperCase(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 25,
+          ),
+        ),
+      ), 
+      title: Text(contactName),
+      subtitle: Text(contactNumber),
+    );
+  }
+
   Widget groupTile(
       String groupId, String groupName, String admin, String userName) {
     getGroupJoinData(groupId, groupName);
@@ -241,38 +266,44 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       leading: CircleAvatar(
         backgroundColor: Theme.of(context).primaryColor,
-        child: Text(groupName.substring(0, 1).toUpperCase(),
-            style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 25)),
+        child: Text(
+          groupName.substring(0, 1).toUpperCase(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 25,
+          ),
+        ),
       ),
       title: Text(groupName),
       subtitle: Text("Admin: ${getGroupName(admin)}"),
       trailing: InkWell(
-          onTap: () {
-            joinGroup(groupId, groupName);
-          },
-          child: isUserJoined
-              ? Container(
-                  decoration: const BoxDecoration(
-                      color: Colors.grey,
-                      borderRadius: BorderRadius.all(Radius.circular(10))),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: const Text("Joined",
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)))
-              : Container(
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(10))),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: const Text("Join",
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)))),
+        onTap: () {
+          joinGroup(groupId, groupName);
+        },
+        child: isUserJoined
+            ? Container(
+                decoration: const BoxDecoration(
+                    color: Colors.grey,
+                    borderRadius: BorderRadius.all(Radius.circular(10))),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: const Text("Joined",
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)))
+            : Container(
+                decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: const BorderRadius.all(Radius.circular(10))),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: const Text(
+                  "Join",
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+      ),
     );
   }
 }
